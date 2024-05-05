@@ -1,5 +1,5 @@
-import json
 import os
+import json
 import random
 from PIL import Image, ImageDraw
 
@@ -13,6 +13,11 @@ def load_annotations(annotation_paths):
             for category in data['categories']:
                 all_categories[category['id']] = category['name']
     return all_annotations, all_categories
+
+def select_random_classes(categories, num_classes=5):
+    if num_classes > len(categories):
+        return categories
+    return random.sample(categories.keys(), num_classes)
 
 def filter_and_sample_classes(annotations, categories, min_images=50, total_sample_size=500):
     category_count = {}
@@ -38,7 +43,7 @@ def split_data(annotations, ratio=(0.7, 0.2, 0.1)):
     return annotations[:train_end], annotations[train_end:val_end], annotations[val_end:]
 
 def create_mask(annotation, img_width, img_height):
-    mask = Image.new('L', (img_width, img_height), 0)  # Black mask
+    mask = Image.new('L', (img_width, img_height), 0)
     draw = ImageDraw.Draw(mask)
     for polygon in annotation['segmentation']:
         if polygon:
@@ -82,25 +87,25 @@ def save_annotations_and_masks(annotations, img_dir, ann_dir, mask_dir, img_fina
         mask.save(mask_path)
         img.save(final_img_path)
 
-def remap_labels(label_dir, id_mapping):
-    for filename in os.listdir(label_dir):
-        if filename.endswith(".txt"):
-            filepath = os.path.join(label_dir, filename)
-            with open(filepath, 'r') as file:
-                lines = file.readlines()
-            with open(filepath, 'w') as file:
-                for line in lines:
-                    parts = line.strip().split()
-                    class_id = int(parts[0])
-                    if class_id in id_mapping:
-                        parts[0] = str(id_mapping[class_id])
-                    file.write(" ".join(parts) + "\n")
+def update_labels(label_dir):
+        for filename in os.listdir(label_dir):
+            if filename.endswith(".txt"):
+                filepath = os.path.join(label_dir, filename)
+                with open(filepath, 'r') as file:
+                    lines = file.readlines()
+                with open(filepath, 'w') as file:
+                    for line in lines:
+                        parts = line.strip().split()
+                        class_id = int(parts[0])
+                        if class_id in selected_cats_map:
+                            parts[0] = str(selected_cats_map[class_id])
+                        file.write(" ".join(parts) + "\n")
 
 if __name__ == "__main__":
     annotation_files = ['annotations/instances_train2024.json', 'annotations/instances_val2024.json']
     annotations, categories = load_annotations(annotation_files)
     filtered_anns, selected_cats = filter_and_sample_classes(annotations, categories)
-
+    selected_cats_map = {cat: idx for idx, cat in enumerate(selected_cats)}
     print("Selected categories and their IDs:", {cat: categories[cat] for cat in selected_cats})
 
     image_dirs = {'train': 'images/train', 'val': 'images/val', 'test': 'images/test'}
@@ -108,10 +113,9 @@ if __name__ == "__main__":
     image_final_dirs = {'train': 'images_final/train', 'val': 'images_final/val', 'test': 'images_final/test'}
 
     train, val, test = split_data(filtered_anns)
+
     save_annotations_and_masks(train, image_dirs['train'], 'annotations/train', mask_dirs['train'], image_final_dirs['train'])
     save_annotations_and_masks(val, image_dirs['val'], 'annotations/val', mask_dirs['val'], image_final_dirs['val'])
     save_annotations_and_masks(test, image_dirs['test'], 'annotations/test', mask_dirs['test'], image_final_dirs['test'])
 
-    # Adjust code based on your mapping
-    # id_mapping = {6: 0, 8: 1, 9: 2, 5: 3, 10: 4}
-    # remap_labels('final_data/val/labels', id_mapping)
+    update_labels('final_data/val/labels')
