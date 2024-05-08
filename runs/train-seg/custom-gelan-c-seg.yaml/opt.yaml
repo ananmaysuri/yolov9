@@ -1,4 +1,4 @@
-config: config.yaml
+config: yolov9/config.yaml
 weights: https://github.com/WongKinYiu/yolov9/releases/download/v0.1/gelan-c-seg.pt
 cfg: yolov9/models/segment/gelan-c-seg.yaml
 data: deep_fashion_dataset/dataset.yaml
@@ -32,7 +32,7 @@ hyp:
   mosaic: 1.0
   mixup: 0.15
   copy_paste: 0.3
-epochs: 100
+epochs: 300
 batch_size: 8
 imgsz: 640
 rect: store_true
