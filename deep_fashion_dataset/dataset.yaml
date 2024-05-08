@@ -1,0 +1,11 @@
+path: /content/deep_fashion_dataset
+train: train
+val: val
+test: test
+nc: 3
+
+# Classes
+names:
+  0: 'vest'
+  1: 'short sleeve top'
+  2: 'long sleeve top'
